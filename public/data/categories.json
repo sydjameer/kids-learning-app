@@ -1,0 +1,218 @@
+[
+  {
+    "id": "free",
+    "name": "Free Lessons",
+    "color": "text-blue-600",
+    "bgColor": "bg-blue-100",
+    "icon": "🎁",
+    "isPremium": false,
+    "lessons": [
+      {
+        "id": 1,
+        "title": "Alphabet",
+        "description": "Learn the ABC's",
+        "image": "/images/alphabet.png",
+        "questions": [
+          {
+            "id": 1,
+            "question": "What letter is this?",
+            "image": "/images/letter-b.png",
+            "options": ["A", "B", "C", "D"],
+            "correctAnswer": "B"
+          },
+          {
+            "id": 2,
+            "question": "Which letter starts the word 'Dog'?",
+            "image": "/images/dog-alphabet.png",
+            "options": ["A", "B", "C", "D"],
+            "correctAnswer": "D"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Numbers",
+        "description": "Count and learn numbers",
+        "image": "/images/numbers.png",
+        "questions": [
+          {
+            "id": 1,
+            "question": "What number is this?",
+            "image": "/images/number-3.png",
+            "options": ["1", "2", "3", "4"],
+            "correctAnswer": "3"
+          },
+          {
+            "id": 2,
+            "question": "How many stars do you see?",
+            "image": "/images/four-stars.png",
+            "options": ["2", "3", "4", "5"],
+            "correctAnswer": "4"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "premium-english",
+    "name": "English",
+    "color": "text-indigo-600",
+    "bgColor": "bg-indigo-100",
+    "icon": "🇬🇧",
+    "isPremium": true,
+    "lessons": [
+      {
+        "id": 3,
+        "title": "Animals",
+        "description": "Learn animal names",
+        "image": "/images/animals.png",
+        "questions": [
+          {
+            "id": 1,
+            "question": "What animal is this?",
+            "image": "/images/elephant.png",
+            "options": ["Lion", "Elephant", "Giraffe", "Tiger"],
+            "correctAnswer": "Elephant"
+          },
+          {
+            "id": 2,
+            "question": "Which animal says 'Meow'?",
+            "image": "/images/cat.png",
+            "options": ["Dog", "Cat", "Bird", "Fish"],
+            "correctAnswer": "Cat"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Colors",
+        "description": "Learn color names",
+        "image": "/images/colors.png",
+        "questions": [
+          {
+            "id": 1,
+            "question": "What color is this?",
+            "image": "/images/red.png",
+            "options": ["Red", "Blue", "Green", "Yellow"],
+            "correctAnswer": "Red"
+          },
+          {
+            "id": 2,
+            "question": "Which color is the sky?",
+            "image": "/images/sky.png",
+            "options": ["Red", "Blue", "Green", "Yellow"],
+            "correctAnswer": "Blue"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "premium-malay",
+    "name": "Malay",
+    "color": "text-green-600",
+    "bgColor": "bg-green-100",
+    "icon": "🇲🇾",
+    "isPremium": true,
+    "lessons": [
+      {
+        "id": 5,
+        "title": "Colors",
+        "description": "Learn colors in Malay",
+        "image": "/images/malay-colors.png",
+        "questions": [
+          {
+            "id": 1,
+            "question": "What color is 'Merah'?",
+            "image": "/images/red.png",
+            "options": ["Red", "Blue", "Green", "Yellow"],
+            "correctAnswer": "Red"
+          },
+          {
+            "id": 2,
+            "question": "Which color is 'Biru'?",
+            "image": "/images/blue.png",
+            "options": ["Orange", "Blue", "Purple", "Brown"],
+            "correctAnswer": "Blue"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Animals",
+        "description": "Learn animals in Malay",
+        "image": "/images/malay-animals.png",
+        "questions": [
+          {
+            "id": 1,
+            "question": "What is 'Kucing'?",
+            "image": "/images/cat.png",
+            "options": ["Dog", "Cat", "Elephant", "Lion"],
+            "correctAnswer": "Cat"
+          },
+          {
+            "id": 2,
+            "question": "Which animal is 'Ikan'?",
+            "image": "/images/fish.png",
+            "options": ["Fish", "Bird", "Rabbit", "Snake"],
+            "correctAnswer": "Fish"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "premium-arabic",
+    "name": "Arabic",
+    "color": "text-purple-600",
+    "bgColor": "bg-purple-100",
+    "icon": "🇸🇦",
+    "isPremium": true,
+    "lessons": [
+      {
+        "id": 7,
+        "title": "Greetings",
+        "description": "Learn Arabic greetings",
+        "image": "/images/arabic-greetings.png",
+        "questions": [
+          {
+            "id": 1,
+            "question": "How do you say 'Hello' in Arabic?",
+            "image": "/images/hello.png",
+            "options": ["Marhaba", "Shukran", "Afwan", "Na'am"],
+            "correctAnswer": "Marhaba"
+          },
+          {
+            "id": 2,
+            "question": "Which means 'Thank you'?",
+            "image": "/images/thank-you.png",
+            "options": ["Marhaba", "Shukran", "Afwan", "Na'am"],
+            "correctAnswer": "Shukran"
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Numbers",
+        "description": "Learn numbers in Arabic",
+        "image": "/images/arabic-numbers.png",
+        "questions": [
+          {
+            "id": 1,
+            "question": "What is 'Wahid'?",
+            "image": "/images/number-1.png",
+            "options": ["One", "Two", "Three", "Four"],
+            "correctAnswer": "One"
+          },
+          {
+            "id": 2,
+            "question": "Which number is 'Thalatha'?",
+            "image": "/images/number-3.png",
+            "options": ["One", "Two", "Three", "Four"],
+            "correctAnswer": "Three"
+          }
+        ]
+      }
+    ]
+  }
+]

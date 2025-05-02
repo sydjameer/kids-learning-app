@@ -1,0 +1,136 @@
+{
+  "items": [
+    {
+      "id": 1,
+      "image": "/images/apple.png",
+      "names": {
+        "english": "Apple",
+        "malay": "Epal",
+        "arabic": "تفاحة (Tuffaha)"
+      },
+      "category": "Fruits",
+      "isPremium": false
+    },
+    {
+      "id": 2,
+      "image": "/images/banana.png",
+      "names": {
+        "english": "Banana",
+        "malay": "Pisang",
+        "arabic": "موزة (Mawza)"
+      },
+      "category": "Fruits",
+      "isPremium": false
+    },
+    {
+      "id": 3,
+      "image": "/images/orange.png",
+      "names": {
+        "english": "Orange",
+        "malay": "Oren",
+        "arabic": "برتقالة (Burtuqala)"
+      },
+      "category": "Fruits",
+      "isPremium": false
+    },
+    {
+      "id": 4,
+      "image": "/images/cat.png",
+      "names": {
+        "english": "Cat",
+        "malay": "Kucing",
+        "arabic": "قطة (Qitta)"
+      },
+      "category": "Animals",
+      "isPremium": true
+    },
+    {
+      "id": 5,
+      "image": "/images/dog.png",
+      "names": {
+        "english": "Dog",
+        "malay": "Anjing",
+        "arabic": "كلب (Kalb)"
+      },
+      "category": "Animals",
+      "isPremium": true
+    },
+    {
+      "id": 6,
+      "image": "/images/bird.png",
+      "names": {
+        "english": "Bird",
+        "malay": "Burung",
+        "arabic": "طائر (Ta'ir)"
+      },
+      "category": "Animals",
+      "isPremium": true
+    },
+    {
+      "id": 7,
+      "image": "/images/car.png",
+      "names": {
+        "english": "Car",
+        "malay": "Kereta",
+        "arabic": "سيارة (Sayyara)"
+      },
+      "category": "Vehicles",
+      "isPremium": true
+    },
+    {
+      "id": 8,
+      "image": "/images/bicycle.png",
+      "names": {
+        "english": "Bicycle",
+        "malay": "Basikal",
+        "arabic": "دراجة (Darrajah)"
+      },
+      "category": "Vehicles",
+      "isPremium": true
+    },
+    {
+      "id": 9,
+      "image": "/images/bus.png",
+      "names": {
+        "english": "Bus",
+        "malay": "Bas",
+        "arabic": "حافلة (Hafila)"
+      },
+      "category": "Vehicles",
+      "isPremium": true
+    },
+    {
+      "id": 10,
+      "image": "/images/sun.png",
+      "names": {
+        "english": "Sun",
+        "malay": "Matahari",
+        "arabic": "شمس (Shams)"
+      },
+      "category": "Nature",
+      "isPremium": true
+    },
+    {
+      "id": 11,
+      "image": "/images/moon.png",
+      "names": {
+        "english": "Moon",
+        "malay": "Bulan",
+        "arabic": "قمر (Qamar)"
+      },
+      "category": "Nature",
+      "isPremium": true
+    },
+    {
+      "id": 12,
+      "image": "/images/star.png",
+      "names": {
+        "english": "Star",
+        "malay": "Bintang",
+        "arabic": "نجمة (Najma)"
+      },
+      "category": "Nature",
+      "isPremium": true
+    }
+  ]
+}
