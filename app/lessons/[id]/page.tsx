@@ -6,18 +6,20 @@ import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { ChevronLeft, Star, VolumeIcon as VolumeUp, Check, RotateCw, Lock, BookOpen } from "lucide-react"
+import { ChevronLeft, Star, VolumeIcon as VolumeUp, Check, RotateCw, BookOpen, AlertCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useProgress } from "@/contexts/progress-context"
-import { usePremium } from "@/contexts/premium-context"
 import { useSound } from "@/contexts/sound-context"
-import { getLessonById } from "@/lib/data"
+import { getLessonById, fetchLessonItems } from "@/lib/api-client"
 import { OverallProgress } from "@/components/overall-progress"
 import { LanguageCard } from "@/components/language-card"
+import type { ImageItem } from "@/types"
 
 export default function LessonPage({ params }: { params: { id: string } }) {
   const router = useRouter()
   const lessonId = Number.parseInt(params.id)
+  const [lesson, setLesson] = useState<any>(null)
+  const [lessonItems, setLessonItems] = useState<ImageItem[]>([])
   const [currentItemIndex, setCurrentItemIndex] = useState(0)
   const [activeLanguage, setActiveLanguage] = useState<string>("english")
   const [mode, setMode] = useState<"learn" | "practice">("learn")
@@ -26,33 +28,109 @@ export default function LessonPage({ params }: { params: { id: string } }) {
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null)
   const [stars, setStars] = useState(0)
   const [quizScore, setQuizScore] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
   const { markItemCompleted, getItemStars, isItemCompleted, isLessonQuizCompleted, getLessonQuizScore } = useProgress()
-  const { isPremium, setShowPremiumModal } = usePremium()
   const { playClick, playCorrect, playIncorrect, playSuccess } = useSound()
 
-  const lesson = getLessonById(lessonId)
-  const currentItem = lesson?.items[currentItemIndex]
-
   useEffect(() => {
-    // Check if lesson is premium and user doesn't have premium access
-    if (lesson?.isPremium && !isPremium) {
-      setShowPremiumModal(true)
+    async function loadData() {
+      setLoading(true)
+      setError(null)
+      try {
+        // Fetch lesson data
+        const lessonData = await getLessonById(lessonId)
+        if (!lessonData) {
+          throw new Error(`Lesson with ID ${lessonId} not found`)
+        }
+        setLesson(lessonData)
+
+        // Fetch lesson items
+        const items = await fetchLessonItems(lessonId)
+        if (!items || items.length === 0) {
+          throw new Error(`No items found for lesson ${lessonId}`)
+        }
+
+        // Log the items to debug
+        console.log("Lesson items:", items)
+
+        // Validate item structure
+        items.forEach((item, index) => {
+          if (!item.names || !item.names.english || !item.names.malay || !item.names.arabic) {
+            console.error(`Item at index ${index} has invalid structure:`, item)
+            throw new Error(`Item data is incomplete or in wrong format`)
+          }
+        })
+
+        setLessonItems(items)
+
+        // Load quiz score if available
+        const score = getLessonQuizScore(lessonId)
+        setQuizScore(score)
+      } catch (error) {
+        console.error("Failed to load lesson data:", error)
+        setError(`Failed to load lesson data: ${error instanceof Error ? error.message : "Unknown error"}`)
+      } finally {
+        setLoading(false)
+      }
     }
 
-    // Load existing stars if item was previously completed
-    if (currentItem) {
+    loadData()
+  }, [lessonId, getLessonQuizScore])
+
+  // Load existing stars if item was previously completed
+  useEffect(() => {
+    if (lessonItems.length > 0 && currentItemIndex < lessonItems.length) {
+      const currentItem = lessonItems[currentItemIndex]
       const existingStars = getItemStars(currentItem.id)
       if (existingStars > 0) {
         setStars(existingStars)
       }
     }
+  }, [lessonItems, currentItemIndex, getItemStars])
 
-    // Load quiz score if available
-    if (lesson) {
-      const score = getLessonQuizScore(lessonId)
-      setQuizScore(score)
-    }
-  }, [lessonId, getItemStars, currentItem, lesson, isPremium, setShowPremiumModal, getLessonQuizScore])
+  // Safely get the current item with null checks
+  const currentItem =
+    lessonItems.length > 0 && currentItemIndex < lessonItems.length ? lessonItems[currentItemIndex] : null
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-fuchsia-100 to-white flex items-center justify-center">
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: [0.8, 1.2, 1], opacity: 1 }}
+          transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, repeatType: "reverse" }}
+          className="text-3xl font-bold text-fuchsia-600"
+          style={{ fontFamily: "ChildsPlay, sans-serif" }}
+        >
+          Loading...
+        </motion.div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-fuchsia-100 to-white">
+        <div className="container mx-auto px-4 py-16 text-center">
+          <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <h1 className="text-3xl font-bold text-red-500 mb-4">Oops! Something went wrong</h1>
+          <p className="mb-8">{error}</p>
+          <div className="space-y-4">
+            <Button onClick={() => window.location.reload()} className="bg-fuchsia-600 hover:bg-fuchsia-700">
+              Try Again
+            </Button>
+            <div>
+              <Button asChild variant="outline" className="mt-4">
+                <Link href="/">Go back to lessons</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   if (!lesson) {
     return (
@@ -68,53 +146,27 @@ export default function LessonPage({ params }: { params: { id: string } }) {
     )
   }
 
-  // If lesson is premium and user doesn't have premium access
-  if (lesson.isPremium && !isPremium) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-fuchsia-100 to-white">
-        <div className="container mx-auto px-4 py-16 text-center">
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="max-w-md mx-auto"
-          >
-            <div className="bg-amber-100 rounded-2xl p-8 border-4 border-amber-300 shadow-xl">
-              <motion.div
-                animate={{ rotate: [0, 10, -10, 10, 0] }}
-                transition={{ duration: 1, delay: 0.5 }}
-                className="flex justify-center mb-6"
-              >
-                <Lock className="h-16 w-16 text-amber-500" />
-              </motion.div>
-              <h1 className="text-3xl font-bold text-amber-600 mb-4">Premium Lesson</h1>
-              <p className="text-lg text-gray-700 mb-6">
-                This is a premium lesson. Unlock all premium content to access it!
-              </p>
-              <Button
-                onClick={() => setShowPremiumModal(true)}
-                className="bg-gradient-to-r from-amber-400 to-amber-600 text-white px-6 py-3 rounded-full text-lg shadow-lg"
-              >
-                Unlock Premium for $9.99
-              </Button>
-              <div className="mt-6">
-                <Link href="/" className="text-fuchsia-600 hover:underline">
-                  Back to lessons
-                </Link>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </div>
-    )
-  }
-
   if (!currentItem) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-fuchsia-100 to-white">
         <div className="container mx-auto px-4 py-16 text-center">
           <h1 className="text-3xl font-bold text-red-500 mb-4">Oops! No items found</h1>
           <p className="mb-8">This lesson doesn't have any items to learn.</p>
+          <Button asChild>
+            <Link href="/">Go back to lessons</Link>
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  // Ensure the current item has all required properties
+  if (!currentItem.names || !currentItem.names.english || !currentItem.names.malay || !currentItem.names.arabic) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-fuchsia-100 to-white">
+        <div className="container mx-auto px-4 py-16 text-center">
+          <h1 className="text-3xl font-bold text-red-500 mb-4">Oops! Invalid item data</h1>
+          <p className="mb-8">The item data is incomplete or in the wrong format.</p>
           <Button asChild>
             <Link href="/">Go back to lessons</Link>
           </Button>
@@ -188,7 +240,7 @@ export default function LessonPage({ params }: { params: { id: string } }) {
 
   const nextItem = () => {
     if (playClick) playClick()
-    if (currentItemIndex < lesson.items.length - 1) {
+    if (currentItemIndex < lessonItems.length - 1) {
       setCurrentItemIndex(currentItemIndex + 1)
       setMode("learn")
       setSelectedAnswer(null)
@@ -218,7 +270,7 @@ export default function LessonPage({ params }: { params: { id: string } }) {
             <span className="sr-only">Back to lessons</span>
           </Button>
           <h1 className="text-3xl font-bold text-fuchsia-600">
-            {lesson.title}: {currentItemIndex + 1}/{lesson.items.length}
+            {lesson.title}: {currentItemIndex + 1}/{lessonItems.length}
           </h1>
           <div className="flex items-center">
             {[...Array(stars)].map((_, i) => (
@@ -426,7 +478,7 @@ export default function LessonPage({ params }: { params: { id: string } }) {
                         Learn Again
                       </Button>
                       <Button onClick={nextItem} className="bg-fuchsia-600 hover:bg-fuchsia-700">
-                        {currentItemIndex < lesson.items.length - 1 ? "Next Item" : "Finish Lesson"}
+                        {currentItemIndex < lessonItems.length - 1 ? "Next Item" : "Finish Lesson"}
                       </Button>
                     </div>
                   </div>
@@ -466,6 +518,19 @@ export default function LessonPage({ params }: { params: { id: string } }) {
             </div>
           </div>
         </main>
+
+        <footer className="text-center mt-12">
+          <div className="flex justify-center space-x-4 mb-4">
+            <Link href="/support" className="text-amber-600 hover:text-amber-700">
+              Support Us
+            </Link>
+            <span className="text-gray-400">|</span>
+            <Link href="/" className="text-fuchsia-600 hover:text-fuchsia-700">
+              Home
+            </Link>
+          </div>
+          <p className="text-gray-500 text-sm">© {new Date().getFullYear()} KidLearn - Making learning fun!</p>
+        </footer>
       </div>
     </div>
   )

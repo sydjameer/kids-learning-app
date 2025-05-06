@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card"
 import { ChevronLeft, Star, VolumeIcon as VolumeUp, Check, RotateCw } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useProgress } from "@/contexts/progress-context"
-import { getItemById } from "@/lib/data"
+import { getItemById } from "@/lib/api-client"
 import { OverallProgress } from "@/components/overall-progress"
 import { LanguageCard } from "@/components/language-card"
 
@@ -23,7 +23,22 @@ export default function LearnPage({ params }: { params: { id: string } }) {
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null)
   const { markItemCompleted, getItemStars, isItemCompleted } = useProgress()
 
-  const item = getItemById(itemId)
+  const [item, setItem] = useState<any>(null)
+
+  useEffect(() => {
+    async function loadItem() {
+      try {
+        // We need to pass both the lesson ID and item ID
+        // For now, we'll use a workaround since we don't have the lesson ID
+        const fetchedItem = await getItemById(1, itemId) // Using lesson ID 1 as fallback
+        setItem(fetchedItem)
+      } catch (error) {
+        console.error("Failed to load item:", error)
+      }
+    }
+
+    loadItem()
+  }, [itemId])
 
   useEffect(() => {
     // Load existing stars if item was previously completed

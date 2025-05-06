@@ -1,30 +1,31 @@
 "use client"
 
 import { useState } from "react"
-import Image from "next/image"
 import { motion } from "framer-motion"
 import { usePremium } from "@/contexts/premium-context"
 import { useSound } from "@/contexts/sound-context"
-import { X, Star, Unlock, Crown } from "lucide-react"
+import { X, Star, Coffee, Heart } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 export function PremiumModal() {
-  const { showPremiumModal, setShowPremiumModal, redirectToPayment } = usePremium()
-  const { playClick, playUnlock } = useSound()
+  const { showSupportModal, setShowSupportModal, redirectToSupport } = usePremium()
+  const { playClick } = useSound()
   const [isAnimating, setIsAnimating] = useState(false)
+  const router = useRouter()
 
-  if (!showPremiumModal) return null
+  if (!showSupportModal) return null
 
   const handleClose = () => {
     if (playClick) playClick()
-    setShowPremiumModal(false)
+    setShowSupportModal(false)
   }
 
-  const handlePurchase = () => {
+  const handleSupport = () => {
     if (playClick) playClick()
-    if (playUnlock) playUnlock()
     setIsAnimating(true)
     setTimeout(() => {
-      redirectToPayment()
+      setShowSupportModal(false)
+      router.push("/support")
     }, 1000)
   }
 
@@ -55,17 +56,20 @@ export function PremiumModal() {
               }}
               transition={{ duration: 0.5 }}
             >
-              <Image src="/placeholder.svg?height=100&width=100&text=Premium" alt="Premium" width={100} height={100} />
+              <Coffee className="h-24 w-24 text-amber-500" />
             </motion.div>
           </div>
 
-          <h2 className="text-3xl font-bold text-fuchsia-600 mb-4">Unlock Premium Content!</h2>
+          <h2 className="text-3xl font-bold text-amber-600 mb-4">Support MIT Learn!</h2>
 
-          <p className="text-lg text-gray-700 mb-6">Get access to all lessons and learning materials for just $9.99!</p>
+          <p className="text-lg text-gray-700 mb-6">
+            MIT Learn is completely free! If you find it helpful, consider supporting our mission with a small
+            contribution.
+          </p>
 
           <div className="bg-amber-100 rounded-xl p-4 mb-6">
             <h3 className="text-xl font-bold text-amber-600 mb-2 flex items-center justify-center">
-              <Crown className="mr-2 text-amber-500" /> Premium Benefits
+              <Heart className="mr-2 text-amber-500" /> Why Support Us?
             </h3>
             <ul className="text-left space-y-2">
               <motion.li
@@ -75,7 +79,7 @@ export function PremiumModal() {
                 transition={{ delay: 0.3 }}
               >
                 <Star className="h-5 w-5 text-amber-500 mr-2 flex-shrink-0" />
-                <span>Access to all premium lessons</span>
+                <span>Help us maintain and improve the app</span>
               </motion.li>
               <motion.li
                 className="flex items-center text-gray-700"
@@ -84,7 +88,7 @@ export function PremiumModal() {
                 transition={{ delay: 0.4 }}
               >
                 <Star className="h-5 w-5 text-amber-500 mr-2 flex-shrink-0" />
-                <span>Learn animals, vehicles, numbers and more</span>
+                <span>Support development of new features</span>
               </motion.li>
               <motion.li
                 className="flex items-center text-gray-700"
@@ -93,34 +97,25 @@ export function PremiumModal() {
                 transition={{ delay: 0.5 }}
               >
                 <Star className="h-5 w-5 text-amber-500 mr-2 flex-shrink-0" />
-                <span>Learn words in English, Malay and Arabic</span>
-              </motion.li>
-              <motion.li
-                className="flex items-center text-gray-700"
-                initial={{ x: -20, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.6 }}
-              >
-                <Star className="h-5 w-5 text-amber-500 mr-2 flex-shrink-0" />
-                <span>No ads or interruptions</span>
+                <span>Help us create more educational content</span>
               </motion.li>
             </ul>
           </div>
 
           <div className="flex justify-center">
             <motion.button
-              onClick={handlePurchase}
-              className="bg-gradient-to-r from-fuchsia-500 to-pink-500 text-white text-xl font-bold py-3 px-8 rounded-full shadow-lg flex items-center"
+              onClick={handleSupport}
+              className="bg-gradient-to-r from-amber-400 to-amber-600 text-white text-xl font-bold py-3 px-8 rounded-full shadow-lg flex items-center"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               animate={isAnimating ? { y: [0, -10, 0] } : {}}
             >
-              <Unlock className="mr-2" />
-              Unlock Premium for $9.99
+              <Coffee className="mr-2" />
+              Buy us a coffee ($2.00)
             </motion.button>
           </div>
 
-          <p className="text-sm text-gray-500 mt-4">One-time payment, no subscription required!</p>
+          <p className="text-sm text-gray-500 mt-4">Your support helps us continue our mission!</p>
         </motion.div>
       </motion.div>
     </div>
