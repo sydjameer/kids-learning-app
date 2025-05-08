@@ -6,29 +6,38 @@ import Link from "next/link"
 import Image from "next/image"
 import { ProgressSummary } from "@/components/progress-summary"
 import { OverallProgress } from "@/components/overall-progress"
-import { fetchLessons } from "@/lib/data"
+import { fetchLessons } from "@/lib/api-client"
 import { Button } from "@/components/ui/button"
 import { usePremium } from "@/contexts/premium-context"
 import { useSound } from "@/contexts/sound-context"
-import { Crown, Lock, Star } from "lucide-react"
+import { useAuth } from "@/contexts/auth-context"
+import { Coffee, Star, AlertCircle } from "lucide-react"
 import type { Lesson } from "@/types"
 import { Card, CardContent } from "@/components/ui/card"
+import { AuthBanner } from "@/components/auth-banner"
+import { AuthModal } from "@/components/auth-modal"
+import { UserMenu } from "@/components/user-menu"
 
 export default function HomePage() {
   const [lessons, setLessons] = useState<Lesson[]>([])
   const [loading, setLoading] = useState(true)
-  const { isPremium, setShowPremiumModal } = usePremium()
+  const [error, setError] = useState<string | null>(null)
+  const [showAuthModal, setShowAuthModal] = useState(false)
+  const { setShowSupportModal } = usePremium()
   const { playClick } = useSound()
+  const { isAuthenticated } = useAuth()
 
   useEffect(() => {
     async function loadData() {
       setLoading(true)
+      setError(null)
       try {
         // Load data with error handling
         const lessonsData = await fetchLessons()
         setLessons(lessonsData)
       } catch (error) {
         console.error("Failed to load data:", error)
+        setError("Failed to load lessons. Please try again later.")
       } finally {
         setLoading(false)
       }
@@ -37,18 +46,14 @@ export default function HomePage() {
     loadData()
   }, [])
 
-  const handleLessonClick = (lesson: Lesson) => {
+  const handleSupportClick = () => {
     if (playClick) playClick()
-    if (lesson.isPremium && !isPremium) {
-      setShowPremiumModal(true)
-    } else {
-      // Navigate to lesson page
-    }
+    setShowSupportModal(true)
   }
 
-  const handleGetPremium = () => {
+  const handleSignInClick = () => {
     if (playClick) playClick()
-    setShowPremiumModal(true)
+    setShowAuthModal(true)
   }
 
   if (loading) {
@@ -67,22 +72,43 @@ export default function HomePage() {
     )
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-fuchsia-100 to-white flex items-center justify-center">
+        <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full text-center">
+          <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-red-500 mb-4">Oops! Something went wrong</h2>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <Button onClick={() => window.location.reload()} className="bg-fuchsia-600 hover:bg-fuchsia-700">
+            Try Again
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-fuchsia-100 to-white">
       <OverallProgress />
 
       <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-end mb-4">
+          <UserMenu onSignInClick={handleSignInClick} />
+        </div>
+
         <motion.header
           className="mb-8 text-center"
           initial={{ y: -50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5 }}
         >
-          <h1 className="text-5xl font-bold text-fuchsia-600 mb-2">KidLearn</h1>
+          <h1 className="text-5xl font-bold text-fuchsia-600 mb-2">MIT Learn</h1>
           <p className="text-2xl text-pink-600">Learn words in multiple languages!</p>
         </motion.header>
 
         <main>
+          <AuthBanner onSignInClick={handleSignInClick} />
+
           <section className="mb-8">
             <ProgressSummary />
           </section>
@@ -104,24 +130,17 @@ export default function HomePage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.1 }}
                 >
-                  <Link href={lesson.isPremium && !isPremium ? "#" : `/lessons/${lesson.id}`}>
+                  <Link href={`/lessons/${lesson.id}`}>
                     <Card
                       className={`h-full overflow-hidden cursor-pointer border-2 ${
-                        lesson.isPremium ? "bg-amber-100" : "bg-cyan-100"
+                        index % 2 === 0 ? "bg-cyan-100" : "bg-amber-100"
                       } hover:shadow-xl transition-all duration-300`}
-                      onClick={() => {
-                        if (lesson.isPremium && !isPremium) {
-                          handleLessonClick(lesson)
-                        }
-                      }}
                       style={{ fontFamily: "ChildsPlay, sans-serif" }}
                     >
                       <CardContent className="p-6">
                         <div className="flex items-center gap-4">
                           <motion.div
-                            className={`relative rounded-full w-20 h-20 flex items-center justify-center overflow-hidden ${
-                              lesson.isPremium && !isPremium ? "opacity-70" : ""
-                            }`}
+                            className="relative rounded-full w-20 h-20 flex items-center justify-center overflow-hidden"
                             whileHover={{ rotate: [0, -10, 10, -10, 0] }}
                             transition={{ duration: 0.5 }}
                           >
@@ -131,37 +150,27 @@ export default function HomePage() {
                               fill
                               className="object-cover"
                             />
-                            {lesson.isPremium && !isPremium && (
-                              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                                <Lock className="h-8 w-8 text-white" />
-                              </div>
-                            )}
                           </motion.div>
                           <div className="flex-1">
                             <div className="flex items-center justify-between">
                               <h3
                                 className={`text-2xl font-bold ${
-                                  lesson.isPremium ? "text-amber-600" : "text-cyan-600"
+                                  index % 2 === 0 ? "text-cyan-600" : "text-amber-600"
                                 } mb-2`}
                               >
                                 {lesson.title}
                               </h3>
-                              {lesson.isPremium && !isPremium && (
-                                <div className="bg-amber-400 rounded-full p-1">
-                                  <Lock className="h-4 w-4 text-white" />
-                                </div>
-                              )}
                             </div>
                             <p className="text-gray-700 mb-2">{lesson.description}</p>
                             <div className="flex items-center text-sm text-gray-600">
-                              <div className="flex space-x-1 mr-2">
-                                <span className="font-bold">{lesson.items.length}</span>
-                                <span>items</span>
-                              </div>
-                              <div className="flex space-x-1">
-                                <span>•</span>
-                                <span>3 languages</span>
-                              </div>
+                              {/* Display the actual number of learning items */}
+                              {lesson.items && lesson.items.length > 0 ? (
+                                <div className="font-medium">
+                                  {lesson.items.length} learning {lesson.items.length === 1 ? "item" : "items"}
+                                </div>
+                              ) : (
+                                <div className="font-medium">Learning items</div>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -172,24 +181,24 @@ export default function HomePage() {
               ))}
             </div>
 
-            {!isPremium && (
-              <motion.div
-                className="mt-10 text-center"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
+            <motion.div
+              className="mt-10 text-center"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <Button
+                onClick={handleSupportClick}
+                className="bg-gradient-to-r from-amber-400 to-amber-600 text-white px-8 py-4 rounded-full text-xl shadow-lg"
+                style={{ fontFamily: "ChildsPlay, sans-serif" }}
               >
-                <Button
-                  onClick={handleGetPremium}
-                  className="bg-gradient-to-r from-amber-400 to-amber-600 text-white px-8 py-4 rounded-full text-xl shadow-lg"
-                  style={{ fontFamily: "ChildsPlay, sans-serif" }}
-                >
-                  <Crown className="mr-2 h-6 w-6" />
-                  Unlock All Premium Lessons for $9.99
-                </Button>
-                <p className="mt-3 text-pink-600 font-medium">Get access to 4 more exciting lessons!</p>
-              </motion.div>
-            )}
+                <Coffee className="mr-2 h-6 w-6" />
+                Support MIT Learn
+              </Button>
+              <p className="mt-3 text-amber-600 font-medium">
+                MIT Learn is completely free! Consider supporting our mission.
+              </p>
+            </motion.div>
           </motion.section>
 
           <motion.section
@@ -232,6 +241,10 @@ export default function HomePage() {
                     <span className="text-xl mr-2">🇸🇦</span>
                     <span className="font-bold text-gray-700">Arabic</span>
                   </div>
+                  <div className="bg-white px-4 py-2 rounded-full flex items-center shadow-md">
+                    <span className="text-xl mr-2">🇸🇬</span>
+                    <span className="font-bold text-gray-700">Singapore</span>
+                  </div>
                 </div>
               </div>
               <div className="flex flex-col items-center">
@@ -246,10 +259,26 @@ export default function HomePage() {
           </motion.section>
         </main>
 
-        <footer className="text-center text-gray-500 text-sm mt-12">
-          <p>© {new Date().getFullYear()} KidLearn - Making learning fun!</p>
+        <footer className="text-center mt-12">
+          <div className="flex justify-center space-x-4 mb-4">
+            <Link href="/support" className="text-amber-600 hover:text-amber-700">
+              Support Us
+            </Link>
+            <span className="text-gray-400">|</span>
+            <Link href="/" className="text-fuchsia-600 hover:text-fuchsia-700">
+              Home
+            </Link>
+          </div>
+          <p className="text-gray-500 text-sm">© {new Date().getFullYear()} MIT Learn - Making learning fun!</p>
+          <div className="flex justify-center items-center mt-2">
+            <span className="text-sm mr-2">🇸🇬</span>
+            <span className="text-xs text-gray-500">Made with ❤️ in Singapore</span>
+          </div>
         </footer>
       </div>
+
+      {/* Auth Modal */}
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
     </div>
   )
 }

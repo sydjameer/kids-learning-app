@@ -3,8 +3,10 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { ProgressProvider } from "@/contexts/progress-context"
 import { PremiumProvider } from "@/contexts/premium-context"
 import { SoundProvider } from "@/contexts/sound-context"
+import { AuthProvider } from "@/contexts/auth-context"
 import { SoundToggle } from "@/components/sound-toggle"
 import { PremiumModal } from "@/components/premium-modal"
+import { SingaporeBranding } from "@/components/singapore-branding"
 import "./globals.css"
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -29,15 +31,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <ThemeProvider attribute="class" defaultTheme="light">
-          <SoundProvider>
-            <PremiumProvider>
-              <ProgressProvider>
-                {children}
-                <SoundToggle />
-                <PremiumModal />
-              </ProgressProvider>
-            </PremiumProvider>
-          </SoundProvider>
+          <AuthProvider>
+            <SoundProvider>
+              <PremiumProvider>
+                <ProgressProvider>
+                  {children}
+                  <SoundToggle />
+                  <PremiumModal />
+                  <SingaporeBranding />
+                </ProgressProvider>
+              </PremiumProvider>
+            </SoundProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

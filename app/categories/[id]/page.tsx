@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { ChevronLeft } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { LessonCard } from "@/components/lesson-card"
-import { fetchCategories, getCategoryById } from "@/lib/api"
+import { fetchCategoryById } from "@/lib/api-client"
 import type { Category } from "@/types"
 import { OverallProgress } from "@/components/overall-progress"
 
@@ -18,8 +18,7 @@ export default function CategoryPage({ params }: { params: { id: string } }) {
   useEffect(() => {
     async function loadData() {
       try {
-        const categories = await fetchCategories()
-        const foundCategory = getCategoryById(categories, params.id)
+        const foundCategory = await fetchCategoryById(params.id)
 
         if (foundCategory) {
           setCategory(foundCategory)
@@ -28,13 +27,6 @@ export default function CategoryPage({ params }: { params: { id: string } }) {
         }
       } catch (error) {
         console.error("Failed to load category:", error)
-        // If categories failed to load, use fallback data directly
-        import("@/lib/api").then(({ fallbackData }) => {
-          const foundCategory = getCategoryById(fallbackData, params.id)
-          if (foundCategory) {
-            setCategory(foundCategory)
-          }
-        })
       } finally {
         setLoading(false)
       }

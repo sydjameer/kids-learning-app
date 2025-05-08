@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import type { LearningProgress } from "@/types"
-import { fetchLearningItems, fetchLessons } from "@/lib/data"
+import { fetchUserProgress, updateItemProgress, updateLessonProgress, updateQuizProgress } from "@/lib/api-client"
 
 interface ProgressContextType {
   progress: LearningProgress
@@ -20,6 +20,8 @@ interface ProgressContextType {
   isLessonQuizCompleted: (lessonId: number) => boolean
   getLessonQuizScore: (lessonId: number) => number
   getCategoryCompletionPercentage: (categoryId: string) => number
+  isLoading: boolean
+  error: string | null
 }
 
 const ProgressContext = createContext<ProgressContextType | undefined>(undefined)
@@ -28,52 +30,125 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
   const [progress, setProgress] = useState<LearningProgress>({})
   const [isLoaded, setIsLoaded] = useState(false)
   const [totalItems, setTotalItems] = useState(0)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // Load total items count
+  // Load user progress from API
   useEffect(() => {
-    const loadItems = async () => {
-      const items = await fetchLearningItems()
-      const lessons = await fetchLessons()
+    const loadData = async () => {
+      setIsLoading(true)
+      setError(null)
 
-      // Count total items across all lessons
-      let totalItemCount = 0
-      lessons.forEach((lesson) => {
-        totalItemCount += lesson.items.length
-      })
+      try {
+        // Load user progress from API
+        const userProgress = await fetchUserProgress()
 
-      setTotalItems(totalItemCount)
+        // Convert API progress format to our app's format
+        const formattedProgress: LearningProgress = {}
+
+        // Process item progress
+        Object.entries(userProgress).forEach(([key, value]: [string, any]) => {
+          if (key.startsWith("item_")) {
+            const itemId = Number.parseInt(key.replace("item_", ""))
+            formattedProgress[itemId] = {
+              completed: value.completed,
+              stars: value.stars,
+            }
+          } else if (key.startsWith("lesson_")) {
+            const lessonId = Number.parseInt(key.replace("lesson_", ""))
+            formattedProgress[`lesson_${lessonId}`] = {
+              completed: value.completed,
+              stars: value.stars,
+              categoryId: value.categoryId,
+            }
+          } else if (key.startsWith("quiz_")) {
+            const lessonId = Number.parseInt(key.replace("quiz_", ""))
+            formattedProgress[`lesson_quiz_${lessonId}`] = {
+              completed: true,
+              quizCompleted: true,
+              quizScore: value.score,
+            }
+          }
+        })
+
+        setProgress(formattedProgress)
+
+        // Set total items count based on the API response
+        if (userProgress.totalItems) {
+          setTotalItems(userProgress.totalItems)
+        }
+      } catch (error) {
+        console.error("Failed to load progress data:", error)
+        setError("Failed to load progress data. Please try again later.")
+
+        // Fall back to localStorage if API fails
+        const savedProgress = localStorage.getItem("learningProgress")
+        if (savedProgress) {
+          setProgress(JSON.parse(savedProgress))
+        }
+      } finally {
+        setIsLoading(false)
+        setIsLoaded(true)
+      }
     }
-    loadItems()
+
+    loadData()
   }, [])
 
-  // Load progress from localStorage on initial render
-  useEffect(() => {
-    const savedProgress = localStorage.getItem("learningProgress")
-    if (savedProgress) {
-      setProgress(JSON.parse(savedProgress))
-    }
-    setIsLoaded(true)
-  }, [])
-
-  // Save progress to localStorage whenever it changes
+  // Save progress to localStorage as backup
   useEffect(() => {
     if (isLoaded) {
       localStorage.setItem("learningProgress", JSON.stringify(progress))
     }
   }, [progress, isLoaded])
 
-  const completedItems = Object.values(progress).filter((item) => item.completed).length
-  const totalStars = Object.values(progress).reduce((total, item) => total + (item.stars || 0), 0)
-  const overallCompletionPercentage = Math.round((completedItems / (totalItems || 1)) * 100) || 0
+  // Count completed items (only count actual items, not lessons or quizzes)
+  const completedItems = Object.entries(progress).filter(
+    ([key, item]) => !key.startsWith("lesson_") && item.completed,
+  ).length
 
-  const markItemCompleted = (itemId: number, stars: number) => {
-    setProgress((prev) => ({
-      ...prev,
-      [itemId]: {
-        completed: true,
-        stars: Math.max(stars, prev[itemId]?.stars || 0),
-      },
-    }))
+  // Calculate total stars
+  const totalStars = Object.values(progress).reduce((total, item) => total + (item.stars || 0), 0)
+
+  // Calculate overall completion percentage with a more accurate approach
+  // Only consider actual items for the percentage calculation
+  const calculateOverallPercentage = () => {
+    // If no total items, return 0
+    if (totalItems <= 0) return 0
+
+    // Calculate percentage based on completed items vs total items
+    const percentage = Math.round((completedItems / totalItems) * 100)
+
+    // Ensure percentage is between 0 and 100
+    return Math.min(Math.max(percentage, 0), 100)
+  }
+
+  const overallCompletionPercentage = calculateOverallPercentage()
+
+  const markItemCompleted = async (itemId: number, stars: number) => {
+    try {
+      // Update on the server
+      await updateItemProgress(itemId, true, stars)
+
+      // Update local state
+      setProgress((prev) => ({
+        ...prev,
+        [itemId]: {
+          completed: true,
+          stars: Math.max(stars, prev[itemId]?.stars || 0),
+        },
+      }))
+    } catch (error) {
+      console.error("Failed to update item progress:", error)
+      // Still update local state even if API fails
+      setProgress((prev) => ({
+        ...prev,
+        [itemId]: {
+          completed: true,
+          stars: Math.max(stars, prev[itemId]?.stars || 0),
+        },
+      }))
+    }
   }
 
   const isItemCompleted = (itemId: number): boolean => {
@@ -84,16 +159,33 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     return progress[itemId]?.stars || 0
   }
 
-  const markLessonCompleted = (lessonId: number, stars: number, categoryId: string) => {
+  const markLessonCompleted = async (lessonId: number, stars: number, categoryId: string) => {
     const key = `lesson_${lessonId}`
-    setProgress((prev) => ({
-      ...prev,
-      [key]: {
-        completed: true,
-        stars: Math.max(stars, prev[key]?.stars || 0),
-        categoryId,
-      },
-    }))
+    try {
+      // Update on the server
+      await updateLessonProgress(lessonId, true, stars)
+
+      // Update local state
+      setProgress((prev) => ({
+        ...prev,
+        [key]: {
+          completed: true,
+          stars: Math.max(stars, prev[key]?.stars || 0),
+          categoryId,
+        },
+      }))
+    } catch (error) {
+      console.error("Failed to update lesson progress:", error)
+      // Still update local state even if API fails
+      setProgress((prev) => ({
+        ...prev,
+        [key]: {
+          completed: true,
+          stars: Math.max(stars, prev[key]?.stars || 0),
+          categoryId,
+        },
+      }))
+    }
   }
 
   const isLessonCompleted = (lessonId: number): boolean => {
@@ -106,16 +198,33 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     return progress[key]?.stars || 0
   }
 
-  const markLessonQuizCompleted = (lessonId: number, score: number) => {
+  const markLessonQuizCompleted = async (lessonId: number, score: number) => {
     const key = `lesson_quiz_${lessonId}`
-    setProgress((prev) => ({
-      ...prev,
-      [key]: {
-        completed: true,
-        quizCompleted: true,
-        quizScore: Math.max(score, prev[key]?.quizScore || 0),
-      },
-    }))
+    try {
+      // Update on the server
+      await updateQuizProgress(lessonId, true, score)
+
+      // Update local state
+      setProgress((prev) => ({
+        ...prev,
+        [key]: {
+          completed: true,
+          quizCompleted: true,
+          quizScore: Math.max(score, prev[key]?.quizScore || 0),
+        },
+      }))
+    } catch (error) {
+      console.error("Failed to update quiz progress:", error)
+      // Still update local state even if API fails
+      setProgress((prev) => ({
+        ...prev,
+        [key]: {
+          completed: true,
+          quizCompleted: true,
+          quizScore: Math.max(score, prev[key]?.quizScore || 0),
+        },
+      }))
+    }
   }
 
   const isLessonQuizCompleted = (lessonId: number): boolean => {
@@ -157,6 +266,8 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
         isLessonQuizCompleted,
         getLessonQuizScore,
         getCategoryCompletionPercentage,
+        isLoading,
+        error,
       }}
     >
       {children}
