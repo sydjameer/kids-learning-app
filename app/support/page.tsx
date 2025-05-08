@@ -6,7 +6,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { ChevronLeft, Coffee, Heart, ExternalLink } from "lucide-react"
+import { ChevronLeft, Heart, ExternalLink } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useSound } from "@/contexts/sound-context"
 
@@ -15,14 +15,15 @@ export default function SupportPage() {
   const { playClick } = useSound()
   const [showThanks, setShowThanks] = useState(false)
 
-  const handleBuyCoffee = () => {
+  const handleSupportClick = () => {
     if (playClick) playClick()
-    // In a real app, this would redirect to a payment gateway
-    // For now, just show a thank you message
+    // Show thank you message
     setShowThanks(true)
 
-    // Redirect to a coffee payment link
-    window.open("https://www.buymeacoffee.com/yourname", "_blank")
+    // Hide the message after 5 seconds
+    setTimeout(() => {
+      setShowThanks(false)
+    }, 5000)
   }
 
   return (
@@ -75,7 +76,7 @@ export default function SupportPage() {
                 <div className="text-center mb-6">
                   <p className="text-gray-700 mb-4">
                     While all content is free, developing and maintaining this app requires time and resources. If you
-                    find MIT Learn helpful, consider supporting us by buying a coffee!
+                    find MIT Learn helpful, consider supporting us!
                   </p>
 
                   <motion.div
@@ -83,11 +84,11 @@ export default function SupportPage() {
                     whileHover={{ rotate: [0, -5, 5, -5, 0] }}
                     transition={{ duration: 0.5 }}
                   >
-                    <Coffee className="h-24 w-24 text-amber-600 mx-auto mb-4" />
+                    <Heart className="h-24 w-24 text-amber-600 mx-auto mb-4" />
                   </motion.div>
 
                   <p className="text-xl font-bold text-amber-600 mb-6">
-                    Your $2.00 contribution helps keep this project going!
+                    Your contribution helps keep this project going!
                   </p>
 
                   {showThanks ? (
@@ -101,13 +102,17 @@ export default function SupportPage() {
                       <p>Your contribution helps us continue our mission.</p>
                     </motion.div>
                   ) : (
-                    <Button
-                      onClick={handleBuyCoffee}
-                      className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-full text-lg"
-                    >
-                      <Coffee className="mr-2 h-5 w-5" />
-                      Buy us a coffee ($2.00)
-                    </Button>
+                    <div className="flex justify-center w-full">
+                      <div className="w-full max-w-md rounded-lg overflow-hidden shadow-md">
+                        <iframe
+                          id="kofiframe"
+                          src="https://ko-fi.com/parentsofkhalifas/?hidefeed=true&widget=true&embed=true&preview=true"
+                          style={{ border: "none", width: "100%", padding: "4px", background: "#f9f9f9" }}
+                          height="712"
+                          title="parentsofkhalifas"
+                        />
+                      </div>
+                    </div>
                   )}
                 </div>
               </CardContent>
@@ -145,10 +150,6 @@ export default function SupportPage() {
 
         <footer className="text-center text-gray-500 text-sm mt-12">
           <p>© {new Date().getFullYear()} MIT Learn - Making learning fun!</p>
-          <div className="flex justify-center items-center mt-2">
-            <span className="text-sm mr-2">🇸🇬</span>
-            <span className="text-xs text-gray-500">Made with ❤️ in Singapore</span>
-          </div>
         </footer>
       </div>
     </div>

@@ -10,16 +10,22 @@ import { fetchLessons } from "@/lib/api-client"
 import { Button } from "@/components/ui/button"
 import { usePremium } from "@/contexts/premium-context"
 import { useSound } from "@/contexts/sound-context"
+import { useAuth } from "@/contexts/auth-context"
 import { Coffee, Star, AlertCircle } from "lucide-react"
 import type { Lesson } from "@/types"
 import { Card, CardContent } from "@/components/ui/card"
+import { AuthBanner } from "@/components/auth-banner"
+import { AuthModal } from "@/components/auth-modal"
+import { UserMenu } from "@/components/user-menu"
 
 export default function HomePage() {
   const [lessons, setLessons] = useState<Lesson[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showAuthModal, setShowAuthModal] = useState(false)
   const { setShowSupportModal } = usePremium()
   const { playClick } = useSound()
+  const { isAuthenticated } = useAuth()
 
   useEffect(() => {
     async function loadData() {
@@ -43,6 +49,11 @@ export default function HomePage() {
   const handleSupportClick = () => {
     if (playClick) playClick()
     setShowSupportModal(true)
+  }
+
+  const handleSignInClick = () => {
+    if (playClick) playClick()
+    setShowAuthModal(true)
   }
 
   if (loading) {
@@ -81,6 +92,10 @@ export default function HomePage() {
       <OverallProgress />
 
       <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-end mb-4">
+          <UserMenu onSignInClick={handleSignInClick} />
+        </div>
+
         <motion.header
           className="mb-8 text-center"
           initial={{ y: -50, opacity: 0 }}
@@ -92,6 +107,8 @@ export default function HomePage() {
         </motion.header>
 
         <main>
+          <AuthBanner onSignInClick={handleSignInClick} />
+
           <section className="mb-8">
             <ProgressSummary />
           </section>
@@ -259,6 +276,9 @@ export default function HomePage() {
           </div>
         </footer>
       </div>
+
+      {/* Auth Modal */}
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
     </div>
   )
 }

@@ -6,25 +6,74 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/a
 // Get auth token from localStorage
 const getAuthToken = (): string | null => {
   if (typeof window !== "undefined") {
-    return localStorage.getItem("authToken")
+    return localStorage.getItem("accessToken")
   }
   return null
 }
 
-// Helper function to handle API responses
-async function handleResponse<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    // Try to get error message from response
-    let errorMessage
-    try {
-      const errorData = await response.json()
-      errorMessage = errorData.detail || errorData.message || `API error: ${response.status}`
-    } catch (e) {
-      errorMessage = `API error: ${response.status}`
+// Refresh token function
+const refreshToken = async (): Promise<boolean> => {
+  if (typeof window === "undefined") return false
+
+  const refreshToken = localStorage.getItem("refreshToken")
+  if (!refreshToken) return false
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/refresh-token`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ refresh: refreshToken }),
+    })
+
+    if (!response.ok) return false
+
+    const data = await response.json()
+    if (data.access) {
+      localStorage.setItem("accessToken", data.access)
+      return true
     }
-    throw new Error(errorMessage)
+
+    return false
+  } catch (error) {
+    console.error("Token refresh failed:", error)
+    return false
   }
-  return response.json()
+}
+
+// Helper function to handle API responses with token refresh
+async function handleResponse<T>(response: Response, retried = false): Promise<T> {
+  if (response.ok) {
+    return response.json()
+  }
+
+  // If unauthorized and not retried yet, try to refresh token
+  if (response.status === 401 && !retried) {
+    const refreshed = await refreshToken()
+    if (refreshed) {
+      // Retry the original request with new token
+      const newToken = getAuthToken()
+      const newOptions = { ...response.clone().headers, Authorization: `Bearer ${newToken}` }
+      const newResponse = await fetch(response.url, {
+        method: response.clone().method,
+        headers: newOptions,
+        body: response.clone().method !== "GET" ? await response.clone().text() : undefined,
+      })
+
+      return handleResponse<T>(newResponse, true)
+    }
+  }
+
+  // Try to get error message from response
+  let errorMessage
+  try {
+    const errorData = await response.json()
+    errorMessage = errorData.detail || errorData.message || `API error: ${response.status}`
+  } catch (e) {
+    errorMessage = `API error: ${response.status}`
+  }
+  throw new Error(errorMessage)
 }
 
 // Common fetch options with authentication
